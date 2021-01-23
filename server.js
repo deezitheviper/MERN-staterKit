@@ -25,6 +25,11 @@ if (process.env.NODE_ENV === 'development') {
 //Load all Routes
 const authRouter = require('./routes/auth')
 
+
+//use route
+app.use('/api', authRouter);
+
+
 app.use((req, res, next) => {
     res.status(404).send({
         success: false,
