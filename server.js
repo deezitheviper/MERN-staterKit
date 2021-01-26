@@ -2,6 +2,7 @@ const express = require('express')
 const morgan = require('morgan')
 const app = express()
 const cors = require('cors')
+const connectDB = require('./config/db')
 
 app.use(express.json())
 
@@ -21,6 +22,8 @@ if (process.env.NODE_ENV === 'development') {
 
 }
 
+//Connect DB
+connectDB()
 
 //Load all Routes
 const authRouter = require('./routes/auth')
