@@ -3,7 +3,7 @@
 /node_modules
 /.pnp
 .pnp.js
-
+.env
 
 # testing
 /coverage
@@ -13,7 +13,7 @@
 
 /client
 
-/config
+/config/config.env
 # misc
 .DS_Store
 .env.local
