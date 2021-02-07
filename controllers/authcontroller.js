@@ -1,13 +1,13 @@
-const User = require('./models/authmodels.js')
+const User = require('../models/authmodels')
 const expressJwt = require('express-jwt')
-const loadash = require('loadash')
+const loadash = require('lodash')
 const { OAuth2Client } = require('google-auth-library')
 const axios = require('axios')
 const { validationResult } = require('express-validator')
 const jwt = require('jsonwebtoken')
 
 //custom error handler to get error from database
-const { errorHandler } = require('./helpers/dbErrorHandling')
+const { errorHandler } = require('../helpers/dbErrorHandling')
 
 const nodemailer = require('nodemailer')
 
