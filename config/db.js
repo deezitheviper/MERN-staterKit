@@ -5,6 +5,8 @@ const connectDB = async () => {
         useCreateIndex: true,
         useFindAndModify: false,
         useUnifiedTopology: true
+    }).catch(err => {
+        console.log(err)
     })
 
     console.log(`mongoDB Connected: ${connection.connection.host}`)

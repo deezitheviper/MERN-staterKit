@@ -22,6 +22,7 @@ var transporter = nodemailer.createTransport({
 
 exports.registerController = (req, res) => {
     const { name, email, password } = req.body
+    console.log(name, email)
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
         const firstError = errors.array().map(error => error.msg)[0]
@@ -48,25 +49,26 @@ exports.registerController = (req, res) => {
             {
                 expiresIn: "15m"
             })
-    }
-    const emailData = {
-        from: process.env.EMAIL_FROM,
-        to: to,
-        subject: 'Email Confirmation Link',
-        html: `
+        const emailData = {
+            to: email,
+            subject: 'Email Confirmation Link',
+            html: `
         <h1>Click on the Link below to activate</h1>
-        <p>${proccess.env.CLIENT_URL}/user/activate/${token}</p>
+        <p>${process.env.CLIENT_URL}/user/activate/${token}</p>
         <hr/>
         <p>${process.env.CLIENT_URL}</p>
         `
-    }
-    transporter.sendMail(emailData).then(sent => {
-        return res.json({
-            message: `Confirmation Email sent to ${email}`
-        }).catch(err => {
-            return res.status(400).json({
-                error: errorHandler(err)
+        }
+        transporter.sendMail(emailData, (err, info) => {
+            if (err) {
+                console.log(err)
+                return res.status(400).json({
+                    error: errorHandler(err)
+                })
+            }
+            return res.json({
+                message: `Confirmation Email sent to ${email}, ${info.messageId}`
             })
         })
-    })
+    }
 }
