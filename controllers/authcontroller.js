@@ -20,9 +20,11 @@ var transporter = nodemailer.createTransport({
     }
 });
 
+
+//Registration
+
 exports.registerController = (req, res) => {
     const { name, email, password } = req.body
-    console.log(name, email)
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
         const firstError = errors.array().map(error => error.msg)[0]
@@ -47,7 +49,7 @@ exports.registerController = (req, res) => {
         },
             process.env.JWT_ACTIVATOR,
             {
-                expiresIn: "15m"
+                expiresIn: "30m"
             })
         const emailData = {
             to: email,
@@ -67,8 +69,46 @@ exports.registerController = (req, res) => {
                 })
             }
             return res.json({
-                message: `Confirmation Email sent to ${email}, ${info.messageId}`
+                message: `Confirmation Email sent to ${email}`
             })
+        })
+    }
+}
+
+//Activation and saving to database
+exports.activationController = (req, res) => {
+    const { token } = req.body
+    if (token) {
+        jwt.verify(token, process.env.JWT_ACTIVATOR, (err, decoded) => {
+            if (err) {
+                return res.status(401).json({
+                    error: 'Expired Link, Signup again'
+                })
+            } else {
+                const { name, email, password } = jwt.decode(token)
+                const user = new User({
+                    name,
+                    email,
+                    password
+                })
+                user.save((err, user) => {
+                    if (err) {
+                        return res.status(401).json({
+                            error: errorHandler(err)
+                        })
+                    } else {
+                        return res.status(200).json({
+                            success: true,
+                            message: "Successfully Registered",
+                            user
+                        })
+                    }
+                })
+            }
+        })
+    } else {
+        return res.json({
+            message: 'can\'t complete request at the moment try again later'
         })
     }
 }
