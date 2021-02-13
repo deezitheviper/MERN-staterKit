@@ -1,5 +1,5 @@
 import React from 'react'
-import { ToastContainer, toast } from 'react-toastify';
+import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
 import {
@@ -8,6 +8,8 @@ import {
     Tooltip, Breadcrumb, Row, Card, Button
 } from 'antd';
 import { QuestionCircleOutlined } from '@ant-design/icons';
+import { isAuth } from '../helpers/auth'
+import { Redirect } from 'react-router-dom'
 
 const Register = () => {
     const [formData, setFormData] = React.useState({
@@ -68,6 +70,9 @@ const Register = () => {
         } else {
             toast.error('Fill all fields')
         }
+    }
+    if (isAuth()) {
+        <Redirect to='/' />
     }
     return (
         <>

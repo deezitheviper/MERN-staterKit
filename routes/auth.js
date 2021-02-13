@@ -9,11 +9,13 @@ const {
 } = require('../helpers/validator')
 
 const { registerController,
-    activationController
+    activationController,
+    loginController
 } = require('../controllers/authcontroller.js')
 
 router.post('/register', validateRegister, registerController)
-router.post('/activate', validateLogin, activationController)
+router.post('/activate', activationController)
+router.post('/login', validateLogin, loginController)
 
 
 module.exports = router
