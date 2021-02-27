@@ -10,12 +10,17 @@ const {
 
 const { registerController,
     activationController,
-    loginController
+    loginController, forgetController, resetController
 } = require('../controllers/authcontroller.js')
 
 router.post('/register', validateRegister, registerController)
 router.post('/activate', activationController)
 router.post('/login', validateLogin, loginController)
+router.post('/passwords/forget', forgotPasswordValidator, forgetController)
+router.put('/passwords/reset', resetController)
+//Google login
+
+router.post('/googlelogin', googleLoginController)
 
 
 module.exports = router

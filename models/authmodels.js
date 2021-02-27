@@ -34,7 +34,6 @@ const userSchema = new mongoose.Schema({
 //Virtual Password
 userSchema.virtual('password')
     .set(function (password) {
-        this.password = password
         this.salt = this.makeSalt()
         this.hashed_password = this.encryptPassword(password)
     })
@@ -46,12 +45,12 @@ userSchema.virtual('password')
 //methods
 userSchema.methods = {
     makeSalt: function () {
-        return Math.round(new Date().valueOf() * Math.random()) + ''
+        return Math.round(new Date().valueOf() * Math.random()) + ""
     },
 
     //Encrypt Pass
     encryptPassword: function (password) {
-        if (!password) return ''
+        if (!password) return ""
         try {
             return crypto
                 .createHmac('Sha1', this.salt)
@@ -59,7 +58,7 @@ userSchema.methods = {
                 .digest('hex')
 
         } catch (err) {
-            return ''
+            return ""
         }
     },
     //Compare the plain password from user and hashed password

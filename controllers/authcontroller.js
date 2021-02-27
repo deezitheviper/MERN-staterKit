@@ -1,6 +1,6 @@
 const User = require('../models/authmodels')
 const expressJwt = require('express-jwt')
-const loadash = require('lodash')
+var _ = require('lodash');
 const { OAuth2Client } = require('google-auth-library')
 const axios = require('axios')
 const { validationResult } = require('express-validator')
@@ -49,7 +49,7 @@ exports.registerController = (req, res) => {
         },
             process.env.JWT_ACTIVATOR,
             {
-                expiresIn: "30m"
+                expiresIn: "60m"
             })
         const emailData = {
             to: email,
@@ -85,7 +85,7 @@ exports.activationController = (req, res) => {
                     error: 'Expired Link, Signup again'
                 })
             } else {
-                const { name, email, password } = jwt.decode(token)
+                let { name, email, password } = decoded
                 const user = new User({
                     name,
                     email,
@@ -156,6 +156,7 @@ exports.loginController = (req, res) => {
                 })
             const { _id, name, email, role } = user
             return res.json({
+                message: "Succesfully Logged In",
                 token,
                 user: {
                     _id,
@@ -167,4 +168,111 @@ exports.loginController = (req, res) => {
         })
     }
 
+}
+
+exports.forgetController = (req, res) => {
+    const { email } = req.body;
+    const errors = validationResult(req)
+
+    if (!errors.isEmpty()) {
+        const firstError = errors.array().map(error => error.msg)[0]
+        return res.status(422).json({
+            error: firstError
+        })
+    } else {
+        User.findOne({ email }, (err, user) => {
+            if (err || !user) {
+                return res.status(400).json({
+                    error: "User not found"
+                }
+                )
+            }
+            const token = jwt.sign({
+                _id: user._id
+            }, process.env.JWT_ACTIVATOR, {
+                expiresIn: "10m"
+            })
+            //send mail
+            const emailData = {
+                to: email,
+                subject: 'Password reset Link',
+                html: `
+<h1>Click on the Link below to reset password</h1>
+<p>${process.env.CLIENT_URL}/password/reset/${token}</p>
+<hr/>
+<p>${process.env.CLIENT_URL}</p>
+`
+            }
+            return User.updateOne({
+                resetPasswordLink: token
+            }, (err, success => {
+                if (err) {
+                    return res.status(400).json({
+                        error: errorHandler(err)
+                    })
+                } else {
+                    transporter.sendMail(emailData, (err, info) => {
+                        if (err) {
+                            return res.status(400).json({
+                                error: errorHandler(err)
+                            })
+                        }
+                        return res.json({
+                            message: `Password reset link  sent to ${email}`
+                        })
+                    })
+                }
+            }))
+
+        })
+    }
+}
+
+exports.resetController = (req, res) => {
+    const { newPassword, resetPasswordLink } = req.body
+
+
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+        const firstError = errors.array().map(error => error.msg)[0]
+        return res.json({
+            error: firstError
+        })
+    } else {
+        if (resetPasswordLink) {
+            jwt.verify(resetPasswordLink, process.env.JWT_ACTIVATOR, (err, decoded) => {
+                if (err) {
+                    return res.status(400).json({
+                        error: "Link Expired "
+                    })
+                }
+                User.findOne({ resetPasswordLink }, (err, user) => {
+                    if (err || !user) {
+
+                        return res.status(400).json({
+                            error: "Link Broken"
+                        })
+                    }
+                    const updateFields = {
+                        password: newPassword,
+                        resetPasswordLink: "",
+                        resetPassword: ""
+                    }
+                    user = _.extend(user, updateFields)
+                    user.save((err, result) => {
+                        if (err) {
+                            return res.status(400).json({
+                                error: "Error Reseting password"
+                            })
+                        }
+                        else {
+                            return res.json({
+                                message: "You can now login with the new password"
+                            })
+                        }
+                    })
+                })
+            })
+        }
+    }
 }
