@@ -276,3 +276,59 @@ exports.resetController = (req, res) => {
         }
     }
 }
+
+
+const client = new OAuth2Client(process.env.G_CLIENT)
+
+exports.googleController = (req, res) => {
+    const { idToken } = req.body
+    client.verifyIdToken({
+        idToken,
+        audience: process.env.G_CLIENT
+    }).then(res => {
+        const { email, email_verified, name } = res.payload
+        //if email is verified
+        if (email_verified) {
+
+            User.findOne({ email }).exec((err, user) => {
+                //if email exits
+                if (user) {
+                    const token = jwt.sign({ _id: user._id }, process.env.JWT_ACTIVATOR, {
+                        expiresIn: '7d'
+                    })
+                    const { _id, role, email, name } = user
+                    return res.json({
+                        token,
+                        user: { _id, name, email, role }
+                    })
+                } else {
+                    //If user does not exit, save user to DB
+                    let password = email + process.JWT_SECRET
+                    user = new User({ email, name, password })
+                    user.save((err, save) => {
+                        if (err) {
+                            return res.status(400).json({
+                                error: errorHandler(err)
+                            })
+                        }
+
+                        const token = jwt.sign({
+                            _id: data._id
+                        }, process.JWT_ACTIVATOR, {
+                            expiresIn: "7d"
+                        })
+                        const { name, _id, email, role } = data
+                        return res.json({
+                            token,
+                            user: { _id, name, email, role }
+                        })
+                    })
+                }
+            })
+        } else {
+            return res.status(400).json({
+                error: "Google login Failed"
+            })
+        }
+    })
+}
