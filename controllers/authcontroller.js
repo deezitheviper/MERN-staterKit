@@ -5,7 +5,7 @@ const { OAuth2Client } = require('google-auth-library')
 const axios = require('axios')
 const { validationResult } = require('express-validator')
 const jwt = require('jsonwebtoken')
-
+const {getToken} = require('./verifyToken')
 //custom error handler to get error from database
 const { errorHandler } = require('../helpers/dbErrorHandling')
 
@@ -275,4 +275,61 @@ exports.resetController = (req, res) => {
             })
         }
     }
+}
+
+
+const client = new OAuth2Client(process.env.G_CLIENT)
+
+exports.googleController = (req, res) => {
+    const { idToken} = req.body
+    const id_token = idToken.uc.id_token
+    axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=`+id_token).then(response => {
+        const { email, email_verified, name } = response.data
+        //if email is verified
+        if (email_verified) { 
+ 
+            User.findOne({ email }).exec((err, user) => { 
+                //if email exits
+                if (user) {
+                    const token = jwt.sign({ _id: user._id }, process.env.JWT_ACTIVATOR, {
+                        expiresIn: '7d'
+                    })
+                    const { _id, role, email, name } = user
+                    return res.json({
+                        token,
+                        user: { _id, name, email, role }
+                    })
+                } else {
+                    //If user does not exit, save user to DB
+                    let password = email + process.env.JWT_SECRET
+                    user = new User({ email, name, password })
+                    user.save((err, data) => {
+                       
+                        if (err) {
+                            return res.status(400).json({
+                                error: errorHandler(err)
+                            })
+                        }
+
+                        const token = jwt.sign({
+                            _id: data._id
+                        }, process.JWT_ACTIVATOR, { 
+                            expiresIn: "7d"
+                        })
+                        const { name, _id, email, role } = data
+                        return res.json({
+                            token,
+                            user: { _id, name, email, role }
+                        })
+                    })
+                }
+            })
+        } else {
+            return res.status(400).json({
+                error: "Google login Failed"
+            })
+        }
+    }).catch(err => {
+        console.log(err)
+    })
 }
