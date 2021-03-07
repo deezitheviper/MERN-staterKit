@@ -313,9 +313,9 @@ exports.googleController = (req, res) => {
 
                         const token = jwt.sign({
                             _id: data._id
-                        }, process.JWT_ACTIVATOR, { 
+                        }, process.env.JWT_ACTIVATOR, { 
                             expiresIn: "7d"
-                        })
+                         })
                         const { name, _id, email, role } = data
                         return res.json({
                             token,
@@ -333,3 +333,50 @@ exports.googleController = (req, res) => {
         console.log(err)
     })
 }
+
+
+exports.facebookController = (req, res) => {
+    const {userID, accessToken} = req.body
+    const url = `https://graph.facebook.com/v2.12/${userID}?fields=id,name,email&access_token=${accessToken}`
+    axios.get(url)
+    .then(response => {
+        const {email, name} = response.data
+        User.findOne({email}).exec((err, user)=>{
+            if(user){
+                const token = jwt.sign({ _id: user._id }, process.env.JWT_ACTIVATOR, {
+                    expiresIn: '7d'
+                })
+                const { _id, role, email, name } = user
+                return res.json({
+                    token,
+                    user: { _id, name, email, role }
+                })
+            }else {
+                //If user does not exit, save user to DB
+                let password = email + process.env.JWT_SECRET
+                user = new User({ email, name, password })
+                user.save((err, data) => {
+                   
+                    if (err) {
+                        return res.status(400).json({
+                            error: errorHandler(err)
+                        })
+                    }
+
+                    const token = jwt.sign({
+                        _id: data._id
+                    }, process.env.JWT_ACTIVATOR, { 
+                        expiresIn: "7d"
+                     })
+                    const { name, _id, email, role } = data
+                    return res.json({
+                        token,
+                        user: { _id, name, email, role }
+                    })
+                })
+            }
+        })
+    }).catch(err => {
+        return res.json({error: "Faceook Login Failed"})
+    })
+}  
